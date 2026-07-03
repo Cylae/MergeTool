@@ -1,0 +1,3 @@
+## 2024-05-24 - Batching git commands in PowerShell scripts
+**Learning:** Calling an external process like `git` inside a loop in PowerShell spawns a new process each iteration, which is very slow. In `script.ps1`, the local branch cleanup spawned a new `git branch -D` for every branch.
+**Action:** Always look for ways to batch arguments to external processes. For `git branch -D`, pass all branch names at once: `git branch -D $branch1 $branch2 ...` to avoid the overhead of N process spawns.
