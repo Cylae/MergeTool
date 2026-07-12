@@ -131,6 +131,9 @@ foreach ($pr in $prs) {
         continue
     }
 
+    # ⚡ Bolt: Track state mutation to avoid redundant git checkout
+    $stateMutated = $false
+
     try {
         if (Invoke-GhMerge -Number $pr.number) {
             Write-Host "$prefix : mergee (direct)" -ForegroundColor Green
@@ -139,6 +142,7 @@ foreach ($pr in $prs) {
         }
         else {
             Write-Host "$prefix : conflit, resolution auto ($Strategy)..." -ForegroundColor DarkYellow
+            $stateMutated = $true
             $resolveResult = Resolve-AndUpdate -Number $pr.number -Strategy $Strategy
 
             if ($resolveResult -eq "ok") {
@@ -164,20 +168,28 @@ foreach ($pr in $prs) {
         Write-Host "$prefix : erreur inattendue - $($_.Exception.Message)" -ForegroundColor Red
         $results.Add([pscustomobject]@{ Number = $pr.number; Title = $pr.title; Status = "Error"; Notes = $_.Exception.Message; Time = Get-Date })
         $fail++
+        $stateMutated = $true
         git merge --abort 2>&1 | Out-Null
     }
 
-    git checkout $BaseBranch --force 2>&1 | Out-Null
+    if ($stateMutated) {
+        git checkout $BaseBranch --force 2>&1 | Out-Null
+    }
     Start-Sleep -Milliseconds 300
 }
 
 # --- Nettoyage des branches locales restantes ------------------------------------
+# ⚡ Bolt: Batch branch deletion to avoid N+1 git process spawning overhead
 if (-not $DryRun) {
-    git branch | ForEach-Object {
+    $branchesToDelete = @(git branch | ForEach-Object {
         $branchName = $_.Trim("* ").Trim()
         if ($branchName -and $branchName -ne $BaseBranch) {
-            git branch -D $branchName 2>&1 | Out-Null
+            $branchName
         }
+    })
+
+    if ($branchesToDelete.Count -gt 0) {
+        git branch -D $branchesToDelete 2>&1 | Out-Null
     }
 }
 

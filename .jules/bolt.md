@@ -1,0 +1,3 @@
+## 2024-07-12 - [PowerShell Subprocess Optimizations]
+**Learning:** PowerShell `ForEach-Object` loops spawning native git commands like `git branch -D` introduce significant overhead. Also, unconditional subprocess calls (like `git checkout` at the end of a loop) waste time if the local git state was not actually mutated.
+**Action:** Always extract values into an array to batch parameters into a single native command execution. Use explicit `$stateMutated` tracking flags to skip costly side-effect commands like `git checkout` when the state is unmodified (e.g., if a PR was merged entirely via GitHub API).
