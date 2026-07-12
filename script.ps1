@@ -118,6 +118,7 @@ $i = 0
 foreach ($pr in $prs) {
     $i++
     $prefix = "[$i/$($prs.Count)] PR #$($pr.number)"
+    $switchedBranch = $false
 
     if ($pr.isDraft) {
         Write-Host "$prefix : draft, ignoree" -ForegroundColor Yellow
@@ -139,6 +140,7 @@ foreach ($pr in $prs) {
         }
         else {
             Write-Host "$prefix : conflit, resolution auto ($Strategy)..." -ForegroundColor DarkYellow
+            $switchedBranch = $true # Resolve-AndUpdate checkout la PR
             $resolveResult = Resolve-AndUpdate -Number $pr.number -Strategy $Strategy
 
             if ($resolveResult -eq "ok") {
@@ -167,21 +169,23 @@ foreach ($pr in $prs) {
         git merge --abort 2>&1 | Out-Null
     }
 
-    git checkout $BaseBranch --force 2>&1 | Out-Null
+    # ⚡ Bolt Optimization: Only checkout if we actually switched branches
+    if ($switchedBranch) {
+        git checkout $BaseBranch --force 2>&1 | Out-Null
+    }
     Start-Sleep -Milliseconds 300
 }
 
 # --- Nettoyage des branches locales restantes ------------------------------------
 if (-not $DryRun) {
     # ⚡ Bolt Optimization: Batch branch deletion to avoid N+1 git process spawning
-    $branchesToDelete = @()
-    git branch | ForEach-Object {
+    # ⚡ Bolt Optimization: Avoid += array reallocation overhead by using pipeline assignment
+    $branchesToDelete = git branch | Where-Object {
         $branchName = $_.Trim("* ").Trim()
-        if ($branchName -and $branchName -ne $BaseBranch) {
-            $branchesToDelete += $branchName
-        }
-    }
-    if ($branchesToDelete.Count -gt 0) {
+        $branchName -and $branchName -ne $BaseBranch
+    } | ForEach-Object { $_.Trim("* ").Trim() }
+
+    if ($null -ne $branchesToDelete -and $branchesToDelete.Count -gt 0) {
         git branch -D $branchesToDelete 2>&1 | Out-Null
     }
 }
