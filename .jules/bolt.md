@@ -1,0 +1,3 @@
+## 2026-07-24 - Avoid N+1 process overhead in PowerShell loops calling native executables
+**Learning:** Calling native executables (like `git branch -D`) inside loops (like `ForEach-Object`) in PowerShell causes massive N+1 process spawning overhead. PowerShell automatically expands arrays passed to native commands into separate arguments, allowing commands to be batched safely.
+**Action:** Always collect arguments into an array (e.g., using pipeline assignment) and pass the array to a single invocation of the native executable instead of looping.
