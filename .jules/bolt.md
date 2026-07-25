@@ -1,0 +1,3 @@
+## 2024-11-20 - [Batching Native Command Arguments in PowerShell]
+**Learning:** Calling native executables (like `git`) inside a loop (e.g., `ForEach-Object`) introduces significant process spawning overhead (N+1 problem). PowerShell automatically expands arrays when passed as arguments to native commands.
+**Action:** Always gather items into an array using pipeline assignment and pass the array directly to the native command to process them in a single batch operation whenever possible.
