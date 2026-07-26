@@ -1,0 +1,3 @@
+## 2026-07-26 - [PowerShell N+1 Process Spawning Overhead]
+**Learning:** Native executable calls (like `git`) inside loops (like `ForEach-Object`) in PowerShell script causes a significant performance bottleneck due to the N+1 process spawning overhead.
+**Action:** Always prefer batching arguments for native executables and passing them as an array variable to the executable instead of calling the executable inside a loop. PowerShell natively expands array variables into separate string arguments for external commands.
