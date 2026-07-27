@@ -173,11 +173,12 @@ foreach ($pr in $prs) {
 
 # --- Nettoyage des branches locales restantes ------------------------------------
 if (-not $DryRun) {
-    git branch | ForEach-Object {
-        $branchName = $_.Trim("* ").Trim()
-        if ($branchName -and $branchName -ne $BaseBranch) {
-            git branch -D $branchName 2>&1 | Out-Null
-        }
+    # ⚡ Bolt: Optimisation - Suppression en lot (batch) des branches
+    # Évite le surcoût lié au lancement de N processus `git` en utilisant la
+    # capacité de PowerShell à développer les tableaux d'arguments, évitant ainsi le problème N+1.
+    $branchesToDelete = git branch | Where-Object { -not $_.Contains('*') } | ForEach-Object { $_.Trim() } | Where-Object { $_ -and $_ -ne $BaseBranch }
+    if ($branchesToDelete) {
+        git branch -D $branchesToDelete 2>&1 | Out-Null
     }
 }
 
