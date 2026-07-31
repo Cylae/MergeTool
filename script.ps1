@@ -173,11 +173,18 @@ foreach ($pr in $prs) {
 
 # --- Nettoyage des branches locales restantes ------------------------------------
 if (-not $DryRun) {
-    git branch | ForEach-Object {
+    # ⚡ Bolt Optimization: Batch git branch deletion
+    # Why: The original ForEach-Object loop spawned a new git process for every branch, resulting in O(N) process creation overhead.
+    # What: We now collect all branch names into an array and pass them directly to a single `git branch -D` command.
+    # Impact: Reduces process spawning from N+1 to 1, significantly speeding up the cleanup phase for repos with many branches.
+    $branchesToDelete = git branch | ForEach-Object {
         $branchName = $_.Trim("* ").Trim()
         if ($branchName -and $branchName -ne $BaseBranch) {
-            git branch -D $branchName 2>&1 | Out-Null
+            $branchName
         }
+    }
+    if ($branchesToDelete) {
+        git branch -D $branchesToDelete 2>&1 | Out-Null
     }
 }
 
