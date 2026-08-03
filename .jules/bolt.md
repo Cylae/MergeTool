@@ -1,0 +1,3 @@
+## 2026-08-03 - [PowerShell Native Process Execution Overhead]
+**Learning:** [Spawning external/native executables (like git) inside a loop (ForEach-Object) introduces severe N+1 performance bottlenecks due to process creation overhead in PowerShell. PowerShell automatically translates array arguments to multiple parameters for native executables natively.]
+**Action:** [Batch process executions for native CLI tools. Accumulate targets into an array and execute the native command once passing the array variable.]
