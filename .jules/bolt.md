@@ -1,0 +1,3 @@
+## 2026-08-06 - [Batching Native Commands in PowerShell]
+**Learning:** [Calling native executables like `git` inside a PowerShell loop (e.g., `ForEach-Object`) incurs significant N+1 process spawning overhead, which is particularly slow on Windows. PowerShell automatically expands arrays when passed to native commands, making it easy to batch operations into a single process call.]
+**Action:** [When needing to execute native commands iteratively on a list of items, aggregate the items into an array first and pass the array to a single invocation of the native command to eliminate the N+1 process overhead.]
