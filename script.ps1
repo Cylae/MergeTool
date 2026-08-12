@@ -173,11 +173,14 @@ foreach ($pr in $prs) {
 
 # --- Nettoyage des branches locales restantes ------------------------------------
 if (-not $DryRun) {
-    git branch | ForEach-Object {
-        $branchName = $_.Trim("* ").Trim()
-        if ($branchName -and $branchName -ne $BaseBranch) {
-            git branch -D $branchName 2>&1 | Out-Null
-        }
+    # ⚡ Bolt Optimization: Batch branch deletion to avoid N+1 process spawning overhead.
+    # What: Instead of calling `git branch -D` inside a loop for each branch, we filter the branches in memory and pass them as a single array.
+    # Why: Spawning a new native process (git) inside a PowerShell loop for each branch causes significant overhead, especially on repos with many branches.
+    # Impact: Reduces native process spawns from O(N) to O(1) during cleanup.
+    # Measurement: Run a stopwatch against cleanup on a repo with many branches before and after.
+    $branchesToDelete = git branch | Where-Object { -not $_.Contains('*') } | ForEach-Object { $_.Trim() } | Where-Object { $_ -ne $BaseBranch }
+    if ($branchesToDelete) {
+        git branch -D $branchesToDelete 2>&1 | Out-Null
     }
 }
 
