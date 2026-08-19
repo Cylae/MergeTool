@@ -173,11 +173,21 @@ foreach ($pr in $prs) {
 
 # --- Nettoyage des branches locales restantes ------------------------------------
 if (-not $DryRun) {
-    git branch | ForEach-Object {
-        $branchName = $_.Trim("* ").Trim()
-        if ($branchName -and $branchName -ne $BaseBranch) {
-            git branch -D $branchName 2>&1 | Out-Null
+    # ⚡ Bolt Optimization: Batch branch deletion to avoid N+1 process spawning overhead.
+    # Instead of calling `git branch -D` inside a loop (O(N) process creations), we collect
+    # all branch names to delete into an array and pass them to a single `git branch -D` call.
+    # We use an array constructor @(...) to ensure safe handling even if there's 0 or 1 branch.
+    $branchesToDelete = @(
+        git branch | ForEach-Object {
+            $branchName = $_.Trim("* ").Trim()
+            if ($branchName -and $branchName -ne $BaseBranch) {
+                $branchName
+            }
         }
+    )
+
+    if ($branchesToDelete.Count -gt 0) {
+        git branch -D $branchesToDelete 2>&1 | Out-Null
     }
 }
 
