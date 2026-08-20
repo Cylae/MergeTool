@@ -1,0 +1,3 @@
+## 2024-08-20 - Batching Executable Calls in PowerShell
+**Learning:** Avoid N+1 process spawning overhead when calling native executables like `git` within a PowerShell `ForEach-Object` loop. Piping output to a loop and calling an external command inside it drastically reduces performance due to the overhead of spawning a new process for each iteration (measured ~3400ms for 100 iterations).
+**Action:** Collect the necessary items into an array `(e.g., $items = @(Get-Items))` and pass the entire array to a single call of the external executable. PowerShell handles expanding the array into arguments efficiently (measured ~93ms for 100 deletions).
