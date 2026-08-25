@@ -1,0 +1,3 @@
+## 2024-08-25 - [Batching Native Commands in PowerShell]
+**Learning:** In PowerShell, wrapping the output of `ForEach-Object` in an array with `@(...)` allows gathering a list of strings (like git branch names). This list can then be passed to a single native executable command (like `git branch -D $branchesToDelete`), and PowerShell will unroll the array, automatically passing each item as a separate argument.
+**Action:** Always look for loops where a native command is executed multiple times inside `ForEach-Object`. Refactor these N+1 operations by collecting the arguments into an array and executing the native command just once outside the loop to significantly reduce process creation overhead.
