@@ -1,0 +1,3 @@
+## 2024-05-18 - [Batching native commands in PowerShell]
+**Learning:** Calling native executables (like `git`) inside a PowerShell `ForEach-Object` loop introduces significant N+1 process spawning overhead. PowerShell 3.0+ safely handles passing arrays to external executables, expanding them as space-separated arguments.
+**Action:** When working with shell scripts (especially in PowerShell), collect targets into an array (using `@(...)` for safety) and pass the array to a single invocation of a native command (like `git branch -D`) if the command supports multiple arguments. This reduces the number of child processes spawned from O(N) to O(1).
