@@ -43,6 +43,7 @@ $timestamp  = Get-Date -Format "yyyyMMdd_HHmmss"
 $logFile    = "merge_log_$timestamp.csv"
 $failedFile = "failed_prs_$timestamp.txt"
 $results    = [System.Collections.Generic.List[object]]::new()
+$checkedOutBranches = [System.Collections.Generic.HashSet[string]]::new([System.StringComparer]::OrdinalIgnoreCase)
 
 # --- Verifications prealables ------------------------------------------------
 if (-not (Test-Path ".git")) {
@@ -76,6 +77,11 @@ function Resolve-AndUpdate {
 
     gh pr checkout $Number 2>&1 | Out-Null
     if ($LASTEXITCODE -ne 0) { return "checkout-failed" }
+
+    $currentBranch = (git branch --show-current).Trim()
+    if ($currentBranch) {
+        [void]$script:checkedOutBranches.Add($currentBranch)
+    }
 
     git fetch origin $BaseBranch 2>&1 | Out-Null
     if ($LASTEXITCODE -ne 0) { return "fetch-main-failed" }
@@ -171,10 +177,9 @@ foreach ($pr in $prs) {
     Start-Sleep -Milliseconds 300
 }
 
-# --- Nettoyage des branches locales restantes ------------------------------------
+# --- Nettoyage des branches locales consultees pendant l'execution ----------------
 if (-not $DryRun) {
-    git branch | ForEach-Object {
-        $branchName = $_.Trim("* ").Trim()
+    foreach ($branchName in $checkedOutBranches) {
         if ($branchName -and $branchName -ne $BaseBranch) {
             git branch -D $branchName 2>&1 | Out-Null
         }
