@@ -183,6 +183,13 @@ if (-not $DryRun) {
 
 # --- Resume -----------------------------------------------------------------------
 if (-not $DryRun) {
+    foreach ($item in $results) {
+        foreach ($prop in $item.psobject.Properties) {
+            if ($prop.Value -is [string] -and $prop.Value -match "^[=+\-@\t\r]") {
+                $prop.Value = "'$($prop.Value)"
+            }
+        }
+    }
     $results | Export-Csv -Path $logFile -NoTypeInformation -Encoding UTF8
     $results | Where-Object { $_.Status -eq "Failed" -or $_.Status -eq "Error" } |
         ForEach-Object { "#$($_.Number) - $($_.Title) - $($_.Notes)" } |
