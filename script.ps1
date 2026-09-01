@@ -72,7 +72,7 @@ function Invoke-GhMerge {
 }
 
 function Resolve-AndUpdate {
-    param($Number, $Strategy)
+    param($Number, $Strategy, $BaseBranch)
 
     gh pr checkout $Number 2>&1 | Out-Null
     if ($LASTEXITCODE -ne 0) { return "checkout-failed" }
@@ -139,7 +139,7 @@ foreach ($pr in $prs) {
         }
         else {
             Write-Host "$prefix : conflit, resolution auto ($Strategy)..." -ForegroundColor DarkYellow
-            $resolveResult = Resolve-AndUpdate -Number $pr.number -Strategy $Strategy
+            $resolveResult = Resolve-AndUpdate -Number $pr.number -Strategy $Strategy -BaseBranch $BaseBranch
 
             if ($resolveResult -eq "ok") {
                 if (Invoke-GhMerge -Number $pr.number) {
