@@ -56,6 +56,12 @@ if ($LASTEXITCODE -ne 0) {
 }
 
 # --- Fonctions -----------------------------------------------------------------
+function Invoke-NativeCommand {
+    param([scriptblock]$Command)
+    & $Command 2>&1 | Out-Null
+    return $LASTEXITCODE -eq 0
+}
+
 function Invoke-GhMerge {
     param($Number, $MaxRetries = 2)
     for ($attempt = 1; $attempt -le $MaxRetries; $attempt++) {
@@ -74,20 +80,16 @@ function Invoke-GhMerge {
 function Resolve-AndUpdate {
     param($Number, $Strategy)
 
-    gh pr checkout $Number 2>&1 | Out-Null
-    if ($LASTEXITCODE -ne 0) { return "checkout-failed" }
+    if (-not (Invoke-NativeCommand { gh pr checkout $Number })) { return "checkout-failed" }
 
-    git fetch origin $BaseBranch 2>&1 | Out-Null
-    if ($LASTEXITCODE -ne 0) { return "fetch-main-failed" }
+    if (-not (Invoke-NativeCommand { git fetch origin $BaseBranch })) { return "fetch-main-failed" }
 
-    git merge "origin/$BaseBranch" -X $Strategy --no-ff -m "Auto-merge $BaseBranch into PR #$Number (strategy: $Strategy)" 2>&1 | Out-Null
-    if ($LASTEXITCODE -ne 0) {
-        git merge --abort 2>&1 | Out-Null
+    if (-not (Invoke-NativeCommand { git merge "origin/$BaseBranch" -X $Strategy --no-ff -m "Auto-merge $BaseBranch into PR #$Number (strategy: $Strategy)" })) {
+        Invoke-NativeCommand { git merge --abort }
         return "merge-conflict"
     }
 
-    git push 2>&1 | Out-Null
-    if ($LASTEXITCODE -ne 0) { return "push-failed" }
+    if (-not (Invoke-NativeCommand { git push })) { return "push-failed" }
 
     return "ok"
 }
