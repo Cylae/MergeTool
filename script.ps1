@@ -56,6 +56,12 @@ if ($LASTEXITCODE -ne 0) {
 }
 
 # --- Fonctions -----------------------------------------------------------------
+function Invoke-QuietCommand {
+    param([scriptblock]$Command)
+    & $Command 2>&1 | Out-Null
+    return ($LASTEXITCODE -eq 0)
+}
+
 function Invoke-GhMerge {
     param($Number, $MaxRetries = 2)
     for ($attempt = 1; $attempt -le $MaxRetries; $attempt++) {
@@ -74,20 +80,15 @@ function Invoke-GhMerge {
 function Resolve-AndUpdate {
     param($Number, $Strategy)
 
-    gh pr checkout $Number 2>&1 | Out-Null
-    if ($LASTEXITCODE -ne 0) { return "checkout-failed" }
+    if (-not (Invoke-QuietCommand { gh pr checkout $Number })) { return "checkout-failed" }
+    if (-not (Invoke-QuietCommand { git fetch origin $BaseBranch })) { return "fetch-main-failed" }
 
-    git fetch origin $BaseBranch 2>&1 | Out-Null
-    if ($LASTEXITCODE -ne 0) { return "fetch-main-failed" }
-
-    git merge "origin/$BaseBranch" -X $Strategy --no-ff -m "Auto-merge $BaseBranch into PR #$Number (strategy: $Strategy)" 2>&1 | Out-Null
-    if ($LASTEXITCODE -ne 0) {
+    if (-not (Invoke-QuietCommand { git merge "origin/$BaseBranch" -X $Strategy --no-ff -m "Auto-merge $BaseBranch into PR #$Number (strategy: $Strategy)" })) {
         git merge --abort 2>&1 | Out-Null
         return "merge-conflict"
     }
 
-    git push 2>&1 | Out-Null
-    if ($LASTEXITCODE -ne 0) { return "push-failed" }
+    if (-not (Invoke-QuietCommand { git push })) { return "push-failed" }
 
     return "ok"
 }
