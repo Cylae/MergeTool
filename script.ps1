@@ -57,7 +57,10 @@ if ($LASTEXITCODE -ne 0) {
 
 # --- Fonctions -----------------------------------------------------------------
 function Invoke-GhMerge {
-    param($Number, $MaxRetries = 2)
+    param(
+        [int]$Number,
+        [int]$MaxRetries = 2
+    )
     for ($attempt = 1; $attempt -le $MaxRetries; $attempt++) {
         $output = gh pr merge $Number --merge --delete-branch --admin 2>&1
         if ($LASTEXITCODE -eq 0) { return $true }
@@ -72,7 +75,10 @@ function Invoke-GhMerge {
 }
 
 function Resolve-AndUpdate {
-    param($Number, $Strategy)
+    param(
+        [int]$Number,
+        [string]$Strategy
+    )
 
     gh pr checkout $Number 2>&1 | Out-Null
     if ($LASTEXITCODE -ne 0) { return "checkout-failed" }
