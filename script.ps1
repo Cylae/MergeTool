@@ -77,9 +77,6 @@ function Resolve-AndUpdate {
     gh pr checkout $Number 2>&1 | Out-Null
     if ($LASTEXITCODE -ne 0) { return "checkout-failed" }
 
-    git fetch origin $BaseBranch 2>&1 | Out-Null
-    if ($LASTEXITCODE -ne 0) { return "fetch-main-failed" }
-
     git merge "origin/$BaseBranch" -X $Strategy --no-ff -m "Auto-merge $BaseBranch into PR #$Number (strategy: $Strategy)" 2>&1 | Out-Null
     if ($LASTEXITCODE -ne 0) {
         git merge --abort 2>&1 | Out-Null
@@ -108,6 +105,15 @@ $prs = $prs | Sort-Object number
 
 Write-Host "$($prs.Count) PR trouvees. Strategie de conflit : $Strategy" -ForegroundColor Cyan
 if ($DryRun) { Write-Host "MODE DRY RUN : rien ne sera modifie.`n" -ForegroundColor Magenta } else { Write-Host "" }
+
+if (-not $DryRun) {
+    # Fetch base branch once before processing PRs to avoid redundant network calls in loop
+    git fetch origin $BaseBranch 2>&1 | Out-Null
+    if ($LASTEXITCODE -ne 0) {
+        Write-Host "Erreur lors du fetch de $BaseBranch." -ForegroundColor Red
+        exit 1
+    }
+}
 
 git checkout $BaseBranch --force 2>&1 | Out-Null
 
