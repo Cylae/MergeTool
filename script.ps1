@@ -114,6 +114,7 @@ git checkout $BaseBranch --force 2>&1 | Out-Null
 # --- Boucle principale ----------------------------------------------------------
 $ok = 0; $okResolved = 0; $fail = 0; $skip = 0
 $i = 0
+$needsCheckout = $false
 
 foreach ($pr in $prs) {
     $i++
@@ -139,6 +140,7 @@ foreach ($pr in $prs) {
         }
         else {
             Write-Host "$prefix : conflit, resolution auto ($Strategy)..." -ForegroundColor DarkYellow
+            $needsCheckout = $true
             $resolveResult = Resolve-AndUpdate -Number $pr.number -Strategy $Strategy
 
             if ($resolveResult -eq "ok") {
@@ -167,7 +169,10 @@ foreach ($pr in $prs) {
         git merge --abort 2>&1 | Out-Null
     }
 
-    git checkout $BaseBranch --force 2>&1 | Out-Null
+    if ($needsCheckout) {
+        git checkout $BaseBranch --force 2>&1 | Out-Null
+        $needsCheckout = $false
+    }
     Start-Sleep -Milliseconds 300
 }
 
