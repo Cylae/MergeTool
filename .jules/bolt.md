@@ -1,0 +1,3 @@
+## 2026-09-04 - [Optimize Git Branch Cleanup in PowerShell]
+**Learning:** Calling native executables like `git` inside loops in PowerShell incurs significant process spawning overhead (N+1 problem).
+**Action:** Always prefer batching arguments to native tools whenever possible, as PowerShell natively expands array items as discrete arguments. For example, pass an array of branches directly to `git branch -D $branchesToDelete`.
