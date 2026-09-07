@@ -1,0 +1,3 @@
+## 2024-05-24 - Batch native command execution in PowerShell
+**Learning:** Looping over native commands (like `git branch -D`) in PowerShell and spawning a process for each iteration introduces significant overhead. Because PowerShell passes arrays to native commands as separate arguments, an entire loop of executions can be replaced by piping or processing the data into a single array and issuing one command.
+**Action:** When calling a native executable that accepts multiple file or branch targets, evaluate properties into an array (e.g., using `@(command | Where-Object ...)` to safely ensure output is an array even for 0-1 elements) and pass the array to a single call instead of inside `ForEach-Object`.
