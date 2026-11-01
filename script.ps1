@@ -173,10 +173,12 @@ foreach ($pr in $prs) {
 
 # --- Nettoyage des branches locales restantes ------------------------------------
 if (-not $DryRun) {
-    git branch | ForEach-Object {
-        $branchName = $_.Trim("* ").Trim()
-        if ($branchName -and $branchName -ne $BaseBranch) {
-            git branch -D $branchName 2>&1 | Out-Null
+    # Performance optimization: batch branch deletion to avoid spawning git process per branch
+    $localBranches = git branch --format="%(refname:short)" 2>&1
+    if ($LASTEXITCODE -eq 0 -and $localBranches) {
+        $branchesToDelete = @($localBranches | Where-Object { $_ -and $_ -ne $BaseBranch })
+        if ($branchesToDelete.Count -gt 0) {
+            git branch -D $branchesToDelete 2>&1 | Out-Null
         }
     }
 }
